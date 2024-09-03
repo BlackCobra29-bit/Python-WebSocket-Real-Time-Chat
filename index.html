@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Chat</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 75%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            word-wrap: break-word;
+            display: inline-block;
+        }
+
+        .message.sent {
+            background-color: #e0ffe0;
+            align-self: flex-end;
+            text-align: right;
+        }
+
+        .message.received {
+            background-color: #e0e0ff;
+            align-self: flex-start;
+            text-align: left;
+        }
+
+        #input-container {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+
+        #message {
+            flex: 1;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chat-container" class="d-flex flex-column">
+        <div id="messages" class="overflow-auto p-3">
+            <!-- Messages will be displayed here -->
+        </div>
+        <div id="input-container" class="d-flex p-2 border-top bg-light">
+            <input type="text" id="username" class="form-control mr-2" placeholder="Enter your username...">
+            <button class="btn btn-primary" onclick="setUsername()">Set Username</button>
+        </div>
+        <div id="input-container" class="d-flex p-2 border-top bg-light">
+            <input type="text" id="message" class="form-control mr-2" placeholder="Type a message..." disabled>
+            <button class="btn btn-primary" onclick="sendMessage()" disabled>Send</button>
+        </div>
+    </div>
+
+    <!-- Bootstrap and WebSocket JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        const ws = new WebSocket('ws://localhost:8765');
+        let username = '';
+
+        ws.onmessage = function (event) {
+            const messages = document.getElementById('messages');
+            const message = document.createElement('div');
+            message.className = 'message received';
+            message.textContent = event.data;
+            messages.appendChild(message);
+            messages.scrollTop = messages.scrollHeight; // Auto-scroll to bottom
+        };
+
+        function setUsername() {
+            const input = document.getElementById('username');
+            username = input.value.trim();
+            if (username) {
+                // Send the username to the server
+                ws.send(username);
+
+                // Enable the message input and send button
+                document.getElementById('message').disabled = false;
+                document.querySelector('button[onclick="sendMessage()"]').disabled = false;
+
+                // Hide the username input
+                document.getElementById('username').style.display = 'none';
+                document.querySelector('button[onclick="setUsername()"]').style.display = 'none';
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message');
+            const message = input.value.trim();
+            if (message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message sent';
+                messageDiv.textContent = `${username}: ${message}`;
+                document.getElementById('messages').appendChild(messageDiv);
+                ws.send(message);
+                input.value = '';
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight; // Auto-scroll to bottom
+            }
+        }
+    </script>
+</body>
+
+</html>
